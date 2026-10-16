@@ -1,7 +1,7 @@
 {
-  "name": "hammerspace-api-portal",
-  "version": "1.0.0",
-  "description": "Self-hosted multi-cluster web console for the full Hammerspace management API",
+  "name": "hs-api-portal",
+  "version": "1.1.0",
+  "description": "Self-hosted multi-cluster web console for the full Hammerspace management API (5.2 and 5.3)",
   "private": true,
   "main": "server.js",
   "scripts": {
@@ -9,5 +9,13 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vjason1/hs-api-portal.git"
+  },
+  "homepage": "https://github.com/vjason1/hs-api-portal#readme",
+  "bugs": {
+    "url": "https://github.com/vjason1/hs-api-portal/issues"
   }
 }

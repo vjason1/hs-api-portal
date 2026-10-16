@@ -1,7 +1,11 @@
+# Project name pinned so the data volume is always hs-api-portal_hs-portal-data, whatever the folder is called
+name: hs-api-portal
+
 services:
   hs-portal:
     build: .
     image: hs-api-portal:latest
+    container_name: hs-api-portal
     ports:
       - "8080:8080"
     volumes:

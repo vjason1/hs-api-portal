@@ -1,4 +1,7 @@
 FROM node:22-alpine
+LABEL org.opencontainers.image.title="hs-api-portal" \
+      org.opencontainers.image.description="Multi-cluster web console for the Hammerspace management API" \
+      org.opencontainers.image.source="https://github.com/vjason1/hs-api-portal"
 WORKDIR /app
 ENV NODE_ENV=production PORT=8080 DATA_DIR=/data
 COPY package.json server.js upload.js store.js ./

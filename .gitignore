@@ -14,3 +14,13 @@ node_modules/
 Thumbs.db
 .vscode/
 .idea/
+
+__pycache__/
+tools/cli-docs/cli.json
+ref.txt
+*.pdf
+tools/cli-docs/cli_help.json
+tools/cli-docs/build.log
+tools/cli-docs/build-*.log
+tools/cli-docs/cli_help_*.json
+tools/cli-docs/cli_docs_*.json
