@@ -117,7 +117,7 @@ function post(urlStr, body, contentType) {
     const lib = u.protocol === 'https:' ? https : http;
     const req = lib.request(u, {
       method: 'POST', rejectUnauthorized: !UPLOAD_INSECURE, timeout: 600000,
-      headers: { 'Content-Type': contentType, 'Content-Length': body.length, 'User-Agent': 'hammerspace-api-portal' },
+      headers: { 'Content-Type': contentType, 'Content-Length': body.length, 'User-Agent': 'hs-api-portal' },
     }, res => {
       const out = []; res.on('data', c => out.push(c));
       res.on('end', () => resolve({ status: res.statusCode, statusText: res.statusMessage, headers: res.headers, body: Buffer.concat(out).toString('utf8') }));

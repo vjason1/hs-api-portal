@@ -1,5 +1,7 @@
 # Hammerspace API Portal
 
+[![docker-build](https://github.com/vjason1/hs-api-portal/actions/workflows/docker.yml/badge.svg)](https://github.com/vjason1/hs-api-portal/actions/workflows/docker.yml)
+
 A self-hosted web console for the Hammerspace management API, covering **every** operation in the API, including the ones the standard GUI doesn't expose. It manages several clusters from one place, uses friendly forms instead of raw JSON, can push changes to many clusters at once, and extracts configuration reports.
 
 > **Unofficial community project.** Hammerspace, Inc. does not make, endorse or support it. "Hammerspace" is used only to describe compatibility. Test changes on a non-production cluster first.
@@ -12,6 +14,7 @@ A self-hosted web console for the Hammerspace management API, covering **every**
 - [Screenshots](#screenshots)
 - [Quick start](#quick-start)
 - [Configuration](#configuration)
+- [Hammerspace releases (5.2 and 5.3)](#hammerspace-releases-52-and-53)
 - [Using the portal](#using-the-portal)
 - [Security](#security)
 - [Customising](#customising)
@@ -22,7 +25,8 @@ A self-hosted web console for the Hammerspace management API, covering **every**
 
 ## Features
 
-- **All 386 API operations** (268 paths) are generated from the cluster's `swagger.json` (sys-mgmt API v1.2). Drop in a newer spec and new endpoints appear without code changes.
+- **All 386 API operations** (268 paths) are generated from the Hammerspace sys-mgmt API definition (`swagger.json`, API v1.2) at load time.
+- **Works with Hammerspace 5.2 and 5.3.** Each cluster is matched to its release automatically. APIs, settings, GUI tab names and CLI help follow the active cluster's release, and multi-cluster pushes respect each target's release.
 - **Laid out like the Hammerspace GUI.** Operations are organised by GUI section and tab (Dashboard, Data › Shares, Administration › Network, …). Each tab shows live data from the cluster.
 - **"CLI Only or Hidden APIs".** The operations the GUI doesn't expose (DNS, NTP, LDAP, KMS, roles, syslog, SMTP, antivirus, file snapshots, internal lookups…) are listed separately, grouped by area.
 - **Forms, not JSON.** Every request body and parameter is a form field with a label and a plain-English description. It includes dropdowns, yes/no toggles, size units, lists, and nested groups. A JSON tab is still there.
@@ -48,8 +52,8 @@ A self-hosted web console for the Hammerspace management API, covering **every**
 ### Docker Compose (recommended)
 
 ```bash
-git clone https://github.com/<you>/hammerspace-api-portal.git
-cd hammerspace-api-portal
+git clone https://github.com/vjason1/hs-api-portal.git
+cd hs-api-portal
 docker compose up -d --build
 ```
 
@@ -95,9 +99,9 @@ All settings are environment variables. See `docker-compose.yml` for a commented
 | `UPLOAD_WORK_DIR` | `/tmp/hs-portal-uploads` | Where bundles are built before upload |
 | `UPLOAD_KEEP_BUNDLES` | `false` | Keep bundles after upload instead of deleting them |
 
-### Using a different API version
+### Using a different API definition
 
-The bundled `public/swagger.json` is the v1.2 sys-mgmt spec. To match your cluster's software exactly, download the spec from the cluster and replace the file, or mount it:
+The bundled `public/swagger.json` is the 5.3 sys-mgmt API (v1.2), which covers 5.2 as well (see [Hammerspace releases](#hammerspace-releases-52-and-53)). To use another definition, replace the file or mount one over it:
 
 ```bash
 docker run ... -v /path/to/swagger.json:/app/public/swagger.json:ro hs-api-portal
@@ -151,7 +155,7 @@ The mapping is in [`public/nav.js`](public/nav.js) (see [Customising](#customisi
 
 ### Explanations from the Command Line Reference
 
-The portal includes help text from the *Hammerspace 5.3 Command Line Reference* and from the CLI's own built-in help: 213 CLI commands and about 1,200 option descriptions, mapped onto the API.
+The portal includes help text from the *Hammerspace 5.3 Command Line Reference* and from each release's own CLI built-in help (5.2: 207 commands, 5.3: 212 commands, about 1,200 option descriptions), mapped onto the API. The help shown always matches the active cluster's release.
 
 - **Under each form field and parameter:** the matching CLI option and its documentation (marked **CLI**). For example, `exportOptions` shows `--export-option` with the full client-spec syntax and examples, and `cronExpression` shows `--minute`, `--hour` and the other schedule options. Long entries expand with *more*.
 - **On each operation page:** a **Command-line equivalent** card with the CLI command, what it does, its example, and all of its options.
@@ -213,8 +217,10 @@ Every operation has a **Run on: …** button next to its submit button. Tick clu
 
 | File | What to change |
 |---|---|
+| [`public/versions.js`](public/versions.js) | Release profiles: what each older release lacks (operations, fields, parameters) and its GUI tab names. |
+| [`tools/versions/diff_specs.py`](tools/versions/diff_specs.py) | Generates a profile's lists from an older release's `swagger.json`. |
 | [`public/nav.js`](public/nav.js) | Which GUI section/tab each API belongs to; `HIDDEN` (operations listed under *CLI Only or Hidden APIs*); and `NOT_IN_GUI` (optional: operations grouped in a section but flagged as not in the GUI; empty by default). Rules are `[METHOD, /path regex/]` and the first match wins. |
-| [`tools/cli-docs/`](tools/cli-docs/) | Regenerates `public/cli-docs.js` (CLI command and option help) from a new Command Line Reference PDF. `map.py` maps CLI commands to API operations. |
+| [`tools/cli-docs/`](tools/cli-docs/) | Regenerates `public/cli-docs.js` (per-release CLI command and option help) from the Command Line Reference PDF and each release's CLI help (`build_all.sh`). `map.py` maps CLI commands to API operations. |
 | [`public/meta.js`](public/meta.js) | Field descriptions, which fields are system-managed or advanced, and which list feeds each reference dropdown. |
 | [`public/objects.js`](public/objects.js) | The object types loaded into the name ↔ UUID directory. |
 | [`public/app.js`](public/app.js) → `ID_PARAMS` | Which parameters get the object picker, and whether it inserts a UUID or a name. |
@@ -229,7 +235,8 @@ Every operation has a **Run on: …** button next to its submit button. Tick clu
 ├── upload.js            Builds .tar.gz bundles and uploads them (multipart POST)
 ├── public/
 │   ├── index.html       App shell
-│   ├── swagger.json     Hammerspace sys-mgmt API spec (v1.2)
+│   ├── swagger.json     Hammerspace sys-mgmt API spec (5.3, API v1.2; superset of 5.2)
+│   ├── versions.js      Release profiles (5.2 / 5.3)
 │   ├── app.js           Operation pages, sending, multi-cluster pushes, extraction UI
 │   ├── shell.js         GUI-style navigation, tab pages, dashboard
 │   ├── nav.js           API → GUI section/tab mapping, hidden list, icons
@@ -237,14 +244,20 @@ Every operation has a **Run on: …** button next to its submit button. Tick clu
 │   ├── forms.js         Form generator for request bodies
 │   ├── meta.js          Field descriptions and hints
 │   ├── cli.js           CLI help shown under fields and on operation pages
-│   ├── cli-docs.js      Generated from the Command Line Reference (tools/cli-docs)
+│   ├── cli-docs.js      Per-release CLI help, generated by tools/cli-docs
 │   ├── render.js        Formatted response rendering
 │   ├── extract.js       Configuration extraction and report builder
 │   ├── clusters.js      Clusters, users and audit pages, cluster switcher
-│   └── styles.css
+│   ├── styles.css
+│   └── img/             Logo
+├── tools/
+│   ├── cli-docs/        Builds public/cli-docs.js from the CLI reference and CLI help
+│   └── versions/        diff_specs.py: release profile from an older swagger.json
 ├── docs/screenshots/
+├── .github/workflows/   CI: syntax check, Docker build, smoke test
 ├── Dockerfile
-└── docker-compose.yml
+├── docker-compose.yml
+└── package.json
 ```
 
 There's no build step: the browser loads the files as they are.
@@ -265,10 +278,11 @@ PORT=9000 DATA_DIR=/tmp/hsdata node server.js
 - **URL encoding:** path parameters are URL-encoded, so `a/b` in `/files/{path}` is sent as `a%2Fb`. Use the query-parameter variant (`GET /files?path=`) if your cluster expects literal slashes.
 - **Clearing fields in pushes:** clearing a field isn't pushed as a change in multi-cluster edits. Use the JSON tab to remove a value on many clusters.
 - **Typed UUIDs in pushes:** UUIDs typed into a request body by hand (JSON tab, or body fields ending in `Uuid`) aren't translated between clusters. Pick objects in parameter fields, or use names.
-- **GUI mapping:** which APIs count as "in the GUI" is based on the 5.2 management GUI. Adjust `public/nav.js` for other versions.
+- **GUI mapping:** which APIs count as "in the GUI" is based on the 5.2 and 5.3 management GUIs. Adjust `public/nav.js` for other releases.
+- **5.2 profile:** it was built from observed behaviour and the CLI help rather than a 5.2 `swagger.json`, so a few field-level differences may be missing. `tools/versions/diff_specs.py` makes it exact once you have a 5.2 spec.
 
 ## License
 
-No license has been chosen yet. Add a `LICENSE` file (for example MIT or Apache-2.0) before publishing publicly. Until then, all rights are reserved by the author.
+No license has been chosen yet, so all rights are reserved by the author. To let others use or change the code, add a `LICENSE` file (for example MIT or Apache-2.0).
 
-The bundled `swagger.json` and the option descriptions in `public/cli-docs.js` (taken from the *Hammerspace Command Line Reference*) are Hammerspace, Inc. material. Check that you may redistribute them before publishing this repository publicly. The same applies to the Hammerspace logo in `public/img/hammerspace-logo.png`, which is a Hammerspace trademark. For a public, unofficial repository, consider replacing it with a plain text title.
+The bundled `swagger.json` and the option descriptions in `public/cli-docs.js` (taken from the *Hammerspace Command Line Reference*) are Hammerspace, Inc. material. Because this repository is public, check that you may redistribute them. The same applies to the Hammerspace logo in `public/img/hammerspace-logo.png`, which is a Hammerspace trademark. For a public, unofficial repository, consider replacing it with a plain text title.
